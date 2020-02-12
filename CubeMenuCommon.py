@@ -86,7 +86,9 @@ def defaultGroup(base):
         g.SetString("name", "Default")
         cmd = ["Std_ViewFront",
                "Std_ViewTop",
-               "Std_ViewRight"]
+               "Std_ViewRight",
+               "CPSeparator",
+               "CubeMenu"]
         g.SetString("commands", ",".join(cmd))
     return g
 
