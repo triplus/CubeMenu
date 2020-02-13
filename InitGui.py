@@ -27,4 +27,3 @@ p = FreeCAD.ParamGet("User parameter:BaseApp/CubeMenu")
 if p.GetBool("Enabled", 1):
     import CubeMenuGui
     import CubeMenuGlobalDefinitions
-
