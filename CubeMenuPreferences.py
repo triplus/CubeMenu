@@ -25,7 +25,6 @@ import os
 import FreeCADGui as Gui
 from PySide import QtGui
 from PySide import QtCore
-import CubeMenuGui as cpg
 import CubeMenuCommon as cpc
 import CubeMenuToolbars as cpt
 
@@ -72,7 +71,6 @@ def saveEnabled():
         g = cpc.findGroup(domain)
         if g:
             g.SetString("commands", ",".join(items))
-            cpg.onWorkbench()
 
 
 def dialog():
@@ -475,7 +473,6 @@ def general(dia, stack, btnClose, btnSettings):
             base.SetString("default", domain)
         else:
             base.RemString("default")
-        cpg.onWorkbench()
 
     ckDefault.stateChanged.connect(onCKDefault)
 
@@ -539,7 +536,6 @@ def general(dia, stack, btnClose, btnSettings):
                 item.setData(QtCore.Qt.UserRole, i)
         enabled.setCurrentRow(0)
         enabled.blockSignals(False)
-        cpg.onWorkbench()
         onSelectionChanged()
 
     def onBtnAddCommand():
@@ -949,9 +945,9 @@ def settings(stack, btnSettingsDone):
 
     # Global panel mode
     loGlobal = QtGui.QHBoxLayout()
-    lblGlobal = QtGui.QLabel("Global panel")
+    lblGlobal = QtGui.QLabel("Global menu")
     ckBoxGlobal = QtGui.QCheckBox()
-    ckBoxGlobal.setToolTip("Enable global panel mode")
+    ckBoxGlobal.setToolTip("Enable global menu mode")
 
     loGlobal.addWidget(lblGlobal)
     loGlobal.addStretch()
@@ -967,8 +963,6 @@ def settings(stack, btnSettingsDone):
             p.SetBool("Global", 1)
         else:
             p.SetBool("Global", 0)
-
-        cpg.onWorkbench()
 
     ckBoxGlobal.stateChanged.connect(onCkBoxGlobal)
 

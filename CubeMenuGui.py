@@ -31,16 +31,24 @@ import CubeMenuPreferences as cpp
 
 
 p = cpc.p
-layout = None
 mw = Gui.getMainWindow()
 
 
 def onShow():
-    pass
+    """Populate menu on show."""
+    cpcmd.populateTop()
 
 
-def onWorkbench():
-    pass
+class DocumentObserver(object):
+    """Manage new menu instances."""
+
+    def slotCreatedDocument(self, doc):
+        """Clear and tag menu."""
+        for m in mw.findChildren(QtGui.QMenu, "NaviCube_Menu"):
+            if not m.property("Clear"):
+                m.clear()
+                m.aboutToShow.connect(onShow)
+                m.setProperty("Clear", True)
 
 
 def accessoriesMenu():
@@ -82,7 +90,7 @@ def onPreferences():
 
 
 def onStart():
-    """Start cube menu."""
+    """Start the cube menu."""
     start = False
     try:
         mw.mainWindowClosed
@@ -94,6 +102,8 @@ def onStart():
         t.deleteLater()
         accessoriesMenu()
         mw.mainWindowClosed.connect(onClose)
+        observer = DocumentObserver()
+        App.addDocumentObserver(observer)
 
 
 def onClose():
@@ -107,10 +117,14 @@ def onClose():
 
 
 def onPreStart():
-    """Start if FreeCAD 0.18 or above is used."""
+    """Start in FreeCAD 0.18 or above."""
     version = App.Version()[0] + "." + App.Version()[1]
-    if version >= "0.18" and mw.property("eventLoop"):
-        onStart()
+    if version >= "0.18":
+        if mw.property("eventLoop"):
+            onStart()
+    else:
+        t.stop()
+        t.deleteLater()
 
 
 t = QtCore.QTimer()
