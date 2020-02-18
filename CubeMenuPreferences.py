@@ -23,6 +23,7 @@
 
 import os
 import FreeCADGui as Gui
+import FreeCAD as App
 from PySide import QtGui
 from PySide import QtCore
 import CubeMenuCommon as cpc
@@ -32,6 +33,7 @@ import CubeMenuToolbars as cpt
 p = cpc.p
 mw = Gui.getMainWindow()
 path = os.path.dirname(__file__) + "/Resources/icons/"
+pView = App.ParamGet("User parameter:BaseApp/Preferences/View")
 
 cBoxWb = None
 cBoxMenu = None
@@ -966,12 +968,59 @@ def settings(stack, btnSettingsDone):
 
     ckBoxGlobal.stateChanged.connect(onCkBoxGlobal)
 
+    # Style
+    loStyle = QtGui.QVBoxLayout()
+    grpSize = QtGui.QGroupBox("Navigation cube:")
+    grpSize.setLayout(loStyle)
+
+    # Style size
+    ckSize = QtGui.QCheckBox()
+    ckSize.setText("Size")
+    spinSize = QtGui.QSpinBox()
+    spinSize.setEnabled(False)
+    spinSize.setRange(1, 10000)
+    spinSize.setValue(pView.GetInt("NaviWidgetSize", 132))
+
+    loSize = QtGui.QHBoxLayout()
+    loSize.addWidget(ckSize)
+    loSize.addStretch()
+    loSize.addWidget(spinSize)
+
+    loStyle.insertLayout(0, loSize)
+
+    # Style set initial values
+    if p.GetBool("EnableSize", 0):
+        ckSize.setChecked(True)
+        spinSize.setEnabled(True)
+
+    # Style functions
+    # Style functions size
+    def onCkSize(checked):
+        """Enable cube size setting."""
+        if checked:
+            p.SetBool("EnableSize", 1)
+            spinSize.setEnabled(True)
+            pView.SetInt("NaviWidgetSize", spinSize.value())
+        else:
+            p.RemBool("EnableSize")
+            spinSize.setEnabled(False)
+            pView.RemInt("NaviWidgetSize")
+
+    ckSize.stateChanged.connect(onCkSize)
+
+    def onSpinSize(value):
+        """Set cube size value."""
+        pView.SetInt("NaviWidgetSize", value)
+
+    spinSize.valueChanged.connect(onSpinSize)
+
     loBtnSettings = QtGui.QHBoxLayout()
     loBtnSettings.addStretch()
     loBtnSettings.addWidget(btnSettingsDone)
 
     # Layout
     layout.addWidget(grpBoxMode)
+    layout.addWidget(grpSize)
     layout.addStretch()
     layoutMain.insertLayout(1, loBtnSettings)
 
