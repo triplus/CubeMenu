@@ -33,7 +33,7 @@ import CubeMenuToolbars as cpt
 p = cpc.p
 mw = Gui.getMainWindow()
 path = os.path.dirname(__file__) + "/Resources/icons/"
-pView = App.ParamGet("User parameter:BaseApp/Preferences/View")
+pCube = App.ParamGet("User parameter:BaseApp/Preferences/NaviCube")
 
 cBoxWb = None
 cBoxMenu = None
@@ -925,8 +925,33 @@ def edit(stack):
     return widget
 
 
+def colorIcon(col):
+    """Create a color icon."""
+    pix = QtGui.QPixmap(64, 64)
+    c = QtGui.QColor()
+    c.setRgba(col)
+    pix.fill(c)
+    return QtGui.QIcon(pix)
+
+
+def colorDialog(col):
+    """Return a color dialog."""
+    return QtGui.QColorDialog.getColor(QtGui.QColor().fromRgba(col),
+                                       None,
+                                       None,
+                                       QtGui.QColorDialog.ShowAlphaChannel |
+                                       QtGui.QColorDialog.DontUseNativeDialog)
+
+
 def settings(stack, btnSettingsDone):
     """Settings widget for preferences."""
+
+    # Colors rgba
+    txtColor = 4278190080
+    colFront = 2164260863
+    colBack = 2162354671
+    colHilite = 4289389311
+    colButton = 2162354671
 
     # Widgets
     widgetSettings = QtGui.QWidget()
@@ -941,9 +966,9 @@ def settings(stack, btnSettingsDone):
     layoutMain.addWidget(scroll)
 
     # Mode
-    grpBoxMode = QtGui.QGroupBox("Mode:")
+    grpMode = QtGui.QGroupBox("Mode:")
     loMode = QtGui.QVBoxLayout()
-    grpBoxMode.setLayout(loMode)
+    grpMode.setLayout(loMode)
 
     # Global panel mode
     loGlobal = QtGui.QHBoxLayout()
@@ -968,10 +993,47 @@ def settings(stack, btnSettingsDone):
 
     ckBoxGlobal.stateChanged.connect(onCkBoxGlobal)
 
+    # Notify
+    grpNotify = None
+    if p.GetBool("NotifyMsg", 1):
+        grpNotify = QtGui.QGroupBox("Notify:")
+        loNotify = QtGui.QVBoxLayout()
+        grpNotify.setLayout(loNotify)
+
+        # Notify message
+        loMsg = QtGui.QHBoxLayout()
+        msg = "Create a new document to make below settings take effect."
+        lblMsg = QtGui.QLabel(msg)
+        btnMsg = QtGui.QPushButton()
+        btnMsg.setText("Got it!")
+        btnMsg.setToolTip("Don't show this message again")
+
+        loMsg.addWidget(lblMsg)
+        loMsg.addStretch()
+        loMsg.addWidget(btnMsg)
+        loNotify.insertLayout(0, loMsg)
+
+        def onBtnMsg():
+            """Don't show notify message."""
+            p.SetBool("NotifyMsg", 0)
+            grpNotify.hide()
+
+        btnMsg.clicked.connect(onBtnMsg)
+
     # Style
     loStyle = QtGui.QVBoxLayout()
-    grpSize = QtGui.QGroupBox("Navigation cube:")
-    grpSize.setLayout(loStyle)
+    grpStyle = QtGui.QGroupBox("Navigation cube:")
+    grpStyle.setLayout(loStyle)
+
+    # Style show CS
+    lblShowCS = QtGui.QLabel()
+    lblShowCS.setText("Show CS")
+    ckShowCS = QtGui.QCheckBox()
+
+    loShowCS = QtGui.QHBoxLayout()
+    loShowCS.addWidget(lblShowCS)
+    loShowCS.addStretch()
+    loShowCS.addWidget(ckShowCS)
 
     # Style size
     ckSize = QtGui.QCheckBox()
@@ -979,48 +1041,789 @@ def settings(stack, btnSettingsDone):
     spinSize = QtGui.QSpinBox()
     spinSize.setEnabled(False)
     spinSize.setRange(1, 10000)
-    spinSize.setValue(pView.GetInt("NaviWidgetSize", 132))
+    spinSize.setValue(pCube.GetInt("CubeSize", 132))
 
     loSize = QtGui.QHBoxLayout()
     loSize.addWidget(ckSize)
     loSize.addStretch()
     loSize.addWidget(spinSize)
 
-    loStyle.insertLayout(0, loSize)
+    # Offset X
+    ckOffsetX = QtGui.QCheckBox()
+    ckOffsetX.setText("Offset X")
+    spinOffsetX = QtGui.QSpinBox()
+    spinOffsetX.setEnabled(False)
+    spinOffsetX.setRange(0, 10000)
+    spinOffsetX.setValue(pCube.GetInt("OffsetX", 0))
+
+    loOffsetX = QtGui.QHBoxLayout()
+    loOffsetX.addWidget(ckOffsetX)
+    loOffsetX.addStretch()
+    loOffsetX.addWidget(spinOffsetX)
+
+    # Offset Y
+    ckOffsetY = QtGui.QCheckBox()
+    ckOffsetY.setText("Offset Y")
+    spinOffsetY = QtGui.QSpinBox()
+    spinOffsetY.setEnabled(False)
+    spinOffsetY.setRange(0, 10000)
+    spinOffsetY.setValue(pCube.GetInt("OffsetY", 0))
+
+    loOffsetY = QtGui.QHBoxLayout()
+    loOffsetY.addWidget(ckOffsetY)
+    loOffsetY.addStretch()
+    loOffsetY.addWidget(spinOffsetY)
+
+    # Style color front
+    ckFrontColor = QtGui.QCheckBox()
+    ckFrontColor.setText("Front color")
+    btnFrontColor = QtGui.QPushButton()
+    btnFrontColor.setEnabled(False)
+
+    loFrontColor = QtGui.QHBoxLayout()
+    loFrontColor.addWidget(ckFrontColor)
+    loFrontColor.addStretch()
+    loFrontColor.addWidget(btnFrontColor)
+
+    # Style color back
+    ckBackColor = QtGui.QCheckBox()
+    ckBackColor.setText("Back color")
+    btnBackColor = QtGui.QPushButton()
+    btnBackColor.setEnabled(False)
+
+    loBackColor = QtGui.QHBoxLayout()
+    loBackColor.addWidget(ckBackColor)
+    loBackColor.addStretch()
+    loBackColor.addWidget(btnBackColor)
+
+    # Style color hilite
+    ckHiliteColor = QtGui.QCheckBox()
+    ckHiliteColor.setText("Hilite color")
+    btnHiliteColor = QtGui.QPushButton()
+    btnHiliteColor.setEnabled(False)
+
+    loHiliteColor = QtGui.QHBoxLayout()
+    loHiliteColor.addWidget(ckHiliteColor)
+    loHiliteColor.addStretch()
+    loHiliteColor.addWidget(btnHiliteColor)
+
+    # Style color button
+    ckButtonColor = QtGui.QCheckBox()
+    ckButtonColor.setText("Button color")
+    btnButtonColor = QtGui.QPushButton()
+    btnButtonColor.setEnabled(False)
+
+    loButtonColor = QtGui.QHBoxLayout()
+    loButtonColor.addWidget(ckButtonColor)
+    loButtonColor.addStretch()
+    loButtonColor.addWidget(btnButtonColor)
+
+    # Style layout
+    loStyle.insertLayout(0, loShowCS)
+    loStyle.insertLayout(1, loSize)
+    loStyle.insertLayout(2, loOffsetX)
+    loStyle.insertLayout(3, loOffsetY)
+    loStyle.insertLayout(4, loFrontColor)
+    loStyle.insertLayout(5, loBackColor)
+    loStyle.insertLayout(6, loHiliteColor)
+    loStyle.insertLayout(7, loButtonColor)
 
     # Style set initial values
+    if pCube.GetBool("ShowCS", 1):
+        ckShowCS.setChecked(True)
+
     if p.GetBool("EnableSize", 0):
         ckSize.setChecked(True)
         spinSize.setEnabled(True)
 
+    if p.GetBool("EnableOffsetX", 0):
+        ckOffsetX.setChecked(True)
+        spinOffsetX.setEnabled(True)
+
+    if p.GetBool("EnableOffsetY", 0):
+        ckOffsetY.setChecked(True)
+        spinOffsetY.setEnabled(True)
+
+    if p.GetBool("EnableFrontColor", 0):
+        ckFrontColor.setChecked(True)
+        btnFrontColor.setEnabled(True)
+
+    if p.GetBool("EnableBackColor", 0):
+        ckBackColor.setChecked(True)
+        btnBackColor.setEnabled(True)
+
+    if p.GetBool("EnableHiliteColor", 0):
+        ckHiliteColor.setChecked(True)
+        btnHiliteColor.setEnabled(True)
+
+    if p.GetBool("EnableButtonColor", 0):
+        ckButtonColor.setChecked(True)
+        btnButtonColor.setEnabled(True)
+
+    btnFrontColor.setIcon(colorIcon(pCube.
+                                    GetUnsigned("FrontColor",
+                                                colFront)))
+    btnBackColor.setIcon(colorIcon(pCube.
+                                   GetUnsigned("BackColor",
+                                               colBack)))
+    btnHiliteColor.setIcon(colorIcon(pCube.
+                                     GetUnsigned("HiliteColor",
+                                                 colHilite)))
+    btnButtonColor.setIcon(colorIcon(pCube.
+                                     GetUnsigned("ButtonColor",
+                                                 colButton)))
+
     # Style functions
+    # Style functions show CS
+    def onCkShowCS(checked):
+        """Show or hide CS."""
+        if checked:
+            pCube.RemBool("ShowCS")
+        else:
+            pCube.SetBool("ShowCS", 0)
+
+    ckShowCS.stateChanged.connect(onCkShowCS)
+
     # Style functions size
     def onCkSize(checked):
         """Enable cube size setting."""
         if checked:
             p.SetBool("EnableSize", 1)
+            pCube.SetInt("CubeSize", spinSize.value())
             spinSize.setEnabled(True)
-            pView.SetInt("NaviWidgetSize", spinSize.value())
+            spinSize.setFocus()
         else:
             p.RemBool("EnableSize")
+            pCube.RemInt("CubeSize")
             spinSize.setEnabled(False)
-            pView.RemInt("NaviWidgetSize")
+
+        spinSize.blockSignals(True)
+        spinSize.setValue(pCube.GetInt("CubeSize", 132))
+        spinSize.blockSignals(False)
 
     ckSize.stateChanged.connect(onCkSize)
 
     def onSpinSize(value):
         """Set cube size value."""
-        pView.SetInt("NaviWidgetSize", value)
+        pCube.SetInt("CubeSize", value)
 
     spinSize.valueChanged.connect(onSpinSize)
+
+    # Style functions offset X
+    def onCkOffsetX(checked):
+        """Enable cube offset x setting."""
+        if checked:
+            p.SetBool("EnableOffsetX", 1)
+            pCube.SetInt("OffsetX", spinOffsetX.value())
+            spinOffsetX.setEnabled(True)
+            spinOffsetX.setFocus()
+        else:
+            p.RemBool("EnableOffsetX")
+            pCube.RemInt("OffsetX")
+            spinOffsetX.setEnabled(False)
+
+        spinOffsetX.blockSignals(True)
+        spinOffsetX.setValue(pCube.GetInt("OffsetX", 0))
+        spinOffsetX.blockSignals(False)
+
+    ckOffsetX.stateChanged.connect(onCkOffsetX)
+
+    def onSpinOffsetX(value):
+        """Set cube offset y value."""
+        pCube.SetInt("OffsetX", value)
+
+    spinOffsetX.valueChanged.connect(onSpinOffsetX)
+
+    # Style functions offset Y
+    def onCkOffsetY(checked):
+        """Enable cube offset y setting."""
+        if checked:
+            p.SetBool("EnableOffsetY", 1)
+            pCube.SetInt("OffsetY", spinOffsetY.value())
+            spinOffsetY.setEnabled(True)
+            spinOffsetY.setFocus()
+        else:
+            p.RemBool("EnableOffsetY")
+            pCube.RemInt("OffsetY")
+            spinOffsetY.setEnabled(False)
+
+        spinOffsetY.blockSignals(True)
+        spinOffsetY.setValue(pCube.GetInt("OffsetY", 0))
+        spinOffsetY.blockSignals(False)
+
+    ckOffsetY.stateChanged.connect(onCkOffsetY)
+
+    def onSpinOffsetY(value):
+        """Set cube offset y value."""
+        pCube.SetInt("OffsetY", value)
+
+    spinOffsetY.valueChanged.connect(onSpinOffsetY)
+
+    # Style functions color front
+    def onCkFrontColor(checked):
+        """Enable front color setting."""
+        if checked:
+            p.SetBool("EnableFrontColor", 1)
+            btnFrontColor.setEnabled(True)
+            btnFrontColor.setFocus()
+            if not pCube.GetUnsigned("FrontColor"):
+                pCube.SetUnsigned("FrontColor", colFront)
+        else:
+            p.RemBool("EnableFrontColor")
+            pCube.RemUnsigned("FrontColor")
+            btnFrontColor.setEnabled(False)
+
+        btnFrontColor.setIcon(colorIcon(pCube.
+                                        GetUnsigned("FrontColor",
+                                                    colFront)))
+
+    ckFrontColor.stateChanged.connect(onCkFrontColor)
+
+    def onBtnFrontColor():
+        """Set the front color."""
+        col = colorDialog(pCube.GetUnsigned("FrontColor",
+                                            colFront))
+        if col.isValid():
+            btnFrontColor.setIcon(colorIcon(col.rgba()))
+            pCube.SetUnsigned("FrontColor", col.rgba())
+
+    btnFrontColor.clicked.connect(onBtnFrontColor)
+
+    # Style functions color back
+    def onCkBackColor(checked):
+        """Enable back color setting."""
+        if checked:
+            p.SetBool("EnableBackColor", 1)
+            btnBackColor.setEnabled(True)
+            btnBackColor.setFocus()
+            if not pCube.GetUnsigned("BackColor"):
+                pCube.SetUnsigned("BackColor", colBack)
+        else:
+            p.SetBool("EnableBackColor", 0)
+            pCube.RemUnsigned("BackColor")
+            btnBackColor.setEnabled(False)
+
+        btnBackColor.setIcon(colorIcon(pCube.
+                                       GetUnsigned("BackColor",
+                                                   colBack)))
+
+    ckBackColor.stateChanged.connect(onCkBackColor)
+
+    def onBtnBackColor():
+        """Set the back color."""
+        col = colorDialog(pCube.GetUnsigned("BackColor",
+                                            colBack))
+        if col.isValid():
+            btnBackColor.setIcon(colorIcon(col.rgba()))
+            pCube.SetUnsigned("BackColor", col.rgba())
+
+    btnBackColor.clicked.connect(onBtnBackColor)
+
+    # Style functions color hilite
+    def onCkHiliteColor(checked):
+        """Enable hilite color setting."""
+        if checked:
+            p.SetBool("EnableHiliteColor", 1)
+            btnHiliteColor.setEnabled(True)
+            btnHiliteColor.setFocus()
+            if not pCube.GetUnsigned("HiliteColor"):
+                pCube.SetUnsigned("HiliteColor", colHilite)
+        else:
+            p.RemBool("EnableHiliteColor")
+            pCube.RemUnsigned("HiliteColor")
+            btnHiliteColor.setEnabled(False)
+
+        btnHiliteColor.setIcon(colorIcon(pCube.
+                                         GetUnsigned("HiliteColor",
+                                                     colHilite)))
+
+    ckHiliteColor.stateChanged.connect(onCkHiliteColor)
+
+    def onBtnHiliteColor():
+        """Set the hilite color."""
+        col = colorDialog(pCube.GetUnsigned("HiliteColor",
+                                            colHilite))
+        if col.isValid():
+            btnHiliteColor.setIcon(colorIcon(col.rgba()))
+            pCube.SetUnsigned("HiliteColor", col.rgba())
+
+    btnHiliteColor.clicked.connect(onBtnHiliteColor)
+
+    # Style functions color button
+    def onCkButtonColor(checked):
+        """Enable button color setting."""
+        if checked:
+            p.SetBool("EnableButtonColor", 1)
+            btnButtonColor.setEnabled(True)
+            btnButtonColor.setFocus()
+            if not pCube.GetUnsigned("ButtonColor"):
+                pCube.SetUnsigned("ButtonColor", colButton)
+        else:
+            p.SetBool("EnableButtonColor", 0)
+            pCube.RemUnsigned("ButtonColor")
+            btnButtonColor.setEnabled(False)
+
+        btnButtonColor.setIcon(colorIcon(pCube.
+                                         GetUnsigned("ButtonColor",
+                                                     colButton)))
+
+    ckButtonColor.stateChanged.connect(onCkButtonColor)
+
+    def onBtnButtonColor():
+        """Set the button color."""
+        col = colorDialog(pCube.GetUnsigned("ButtonColor",
+                                            colButton))
+        if col.isValid():
+            btnButtonColor.setIcon(colorIcon(col.rgba()))
+            pCube.SetUnsigned("ButtonColor", col.rgba())
+
+    btnButtonColor.clicked.connect(onBtnButtonColor)
+
+    # Text
+    loText = QtGui.QVBoxLayout()
+    grpText = QtGui.QGroupBox("Navigation cube text:")
+    grpText.setLayout(loText)
+
+    # Text color
+    ckTextColor = QtGui.QCheckBox()
+    ckTextColor.setText("Color")
+    btnTextColor = QtGui.QPushButton()
+    btnTextColor.setEnabled(False)
+
+    loTextColor = QtGui.QHBoxLayout()
+    loTextColor.addWidget(ckTextColor)
+    loTextColor.addStretch()
+    loTextColor.addWidget(btnTextColor)
+
+    # Font weight
+    ckTextWeight = QtGui.QCheckBox()
+    ckTextWeight.setText("Weight")
+    spinTextWeight = QtGui.QSpinBox()
+    spinTextWeight.setEnabled(False)
+    spinTextWeight.setRange(1, 99)
+    spinTextWeight.setValue(pCube.GetInt("FontWeight", 87))
+
+    loTextWeight = QtGui.QHBoxLayout()
+    loTextWeight.addWidget(ckTextWeight)
+    loTextWeight.addStretch()
+    loTextWeight.addWidget(spinTextWeight)
+
+    # Font stretch
+    ckTextStretch = QtGui.QCheckBox()
+    ckTextStretch.setText("Stretch")
+    spinTextStretch = QtGui.QSpinBox()
+    spinTextStretch.setEnabled(False)
+    spinTextStretch.setRange(1, 1000)
+    spinTextStretch.setValue(pCube.GetInt("FontStretch", 62))
+
+    loTextStretch = QtGui.QHBoxLayout()
+    loTextStretch.addWidget(ckTextStretch)
+    loTextStretch.addStretch()
+    loTextStretch.addWidget(spinTextStretch)
+
+    # Font string
+    ckFontString = QtGui.QCheckBox()
+    ckFontString.setText("Font")
+    btnFontString = QtGui.QPushButton()
+    btnFontString.setEnabled(False)
+    btnFontString.setText(pCube.GetString("FontString",
+                                          "Font").split(",")[0])
+
+    loFontString = QtGui.QHBoxLayout()
+    loFontString.addWidget(ckFontString)
+    loFontString.addStretch()
+    loFontString.addWidget(btnFontString)
+
+    # Text front
+    ckTextFront = QtGui.QCheckBox()
+    ckTextFront.setText("Front")
+    leTextFront = QtGui.QLineEdit()
+    leTextFront.setMaximumWidth(300)
+    leTextFront.setEnabled(False)
+
+    loTextFront = QtGui.QHBoxLayout()
+    loTextFront.addWidget(ckTextFront)
+    loTextFront.addStretch()
+    loTextFront.addWidget(leTextFront)
+
+    # Text Rear
+    ckTextRear = QtGui.QCheckBox()
+    ckTextRear.setText("Rear")
+    leTextRear = QtGui.QLineEdit()
+    leTextRear.setMaximumWidth(300)
+    leTextRear.setEnabled(False)
+
+    loTextRear = QtGui.QHBoxLayout()
+    loTextRear.addWidget(ckTextRear)
+    loTextRear.addStretch()
+    loTextRear.addWidget(leTextRear)
+
+    # Text Top
+    ckTextTop = QtGui.QCheckBox()
+    ckTextTop.setText("Top")
+    leTextTop = QtGui.QLineEdit()
+    leTextTop.setMaximumWidth(300)
+    leTextTop.setEnabled(False)
+
+    loTextTop = QtGui.QHBoxLayout()
+    loTextTop.addWidget(ckTextTop)
+    loTextTop.addStretch()
+    loTextTop.addWidget(leTextTop)
+
+    # Text Bottom
+    ckTextBottom = QtGui.QCheckBox()
+    ckTextBottom.setText("Bottom")
+    leTextBottom = QtGui.QLineEdit()
+    leTextBottom.setMaximumWidth(300)
+    leTextBottom.setEnabled(False)
+
+    loTextBottom = QtGui.QHBoxLayout()
+    loTextBottom.addWidget(ckTextBottom)
+    loTextBottom.addStretch()
+    loTextBottom.addWidget(leTextBottom)
+
+    # Text Left
+    ckTextLeft = QtGui.QCheckBox()
+    ckTextLeft.setText("Left")
+    leTextLeft = QtGui.QLineEdit()
+    leTextLeft.setMaximumWidth(300)
+    leTextLeft.setEnabled(False)
+
+    loTextLeft = QtGui.QHBoxLayout()
+    loTextLeft.addWidget(ckTextLeft)
+    loTextLeft.addStretch()
+    loTextLeft.addWidget(leTextLeft)
+
+    # Text Right
+    ckTextRight = QtGui.QCheckBox()
+    ckTextRight.setText("Right")
+    leTextRight = QtGui.QLineEdit()
+    leTextRight.setMaximumWidth(300)
+    leTextRight.setEnabled(False)
+
+    loTextRight = QtGui.QHBoxLayout()
+    loTextRight.addWidget(ckTextRight)
+    loTextRight.addStretch()
+    loTextRight.addWidget(leTextRight)
+
+    # Text set initial values
+    if p.GetBool("EnableTextColor", 0):
+        ckTextColor.setChecked(True)
+        btnTextColor.setEnabled(True)
+
+    if p.GetBool("EnableTextWeight", 0):
+        ckTextWeight.setChecked(True)
+        spinTextWeight.setEnabled(True)
+
+    if p.GetBool("EnableTextStretch", 0):
+        ckTextStretch.setChecked(True)
+        spinTextStretch.setEnabled(True)
+
+    if p.GetBool("EnableFontString", 0):
+        ckFontString.setChecked(True)
+        btnFontString.setEnabled(True)
+
+    if p.GetBool("EnableTextFront", 0):
+        ckTextFront.setChecked(True)
+        leTextFront.setEnabled(True)
+
+    if p.GetBool("EnableTextRear", 0):
+        ckTextRear.setChecked(True)
+        leTextRear.setEnabled(True)
+
+    if p.GetBool("EnableTextTop", 0):
+        ckTextTop.setChecked(True)
+        leTextTop.setEnabled(True)
+
+    if p.GetBool("EnableTextBottom", 0):
+        ckTextBottom.setChecked(True)
+        leTextBottom.setEnabled(True)
+
+    if p.GetBool("EnableTextLeft", 0):
+        ckTextLeft.setChecked(True)
+        leTextLeft.setEnabled(True)
+
+    if p.GetBool("EnableTextRight", 0):
+        ckTextRight.setChecked(True)
+        leTextRight.setEnabled(True)
+
+    btnTextColor.setIcon(colorIcon(pCube.GetUnsigned("TextColor",
+                                                     txtColor)))
+
+    leTextFront.setText(pCube.GetString("TextFront", "FRONT"))
+    leTextRear.setText(pCube.GetString("TextRear", "REAR"))
+    leTextTop.setText(pCube.GetString("TextTop", "TOP"))
+    leTextBottom.setText(pCube.GetString("TextBottom", "BOTTOM"))
+    leTextLeft.setText(pCube.GetString("TextLeft", "LEFT"))
+    leTextRight.setText(pCube.GetString("TextRight", "RIGHT"))
+
+    # Text functions
+    # Text functions color
+    def onCkTextColor(checked):
+        """Enable text color setting."""
+        if checked:
+            p.SetBool("EnableTextColor", 1)
+            btnTextColor.setEnabled(True)
+            btnTextColor.setFocus()
+            if not pCube.GetUnsigned("TextColor"):
+                pCube.SetUnsigned("TextColor", txtColor)
+        else:
+            p.RemBool("EnableTextColor")
+            pCube.RemUnsigned("TextColor")
+            btnTextColor.setEnabled(False)
+
+        btnTextColor.setIcon(colorIcon(pCube.
+                                       GetUnsigned("TextColor",
+                                                   txtColor)))
+
+    ckTextColor.stateChanged.connect(onCkTextColor)
+
+    def onBtnTextColor():
+        """Set the text color."""
+        col = colorDialog(pCube.GetUnsigned("TextColor", txtColor))
+        if col.isValid():
+            btnTextColor.setIcon(colorIcon(col.rgba()))
+            pCube.SetUnsigned("TextColor", col.rgba())
+
+    btnTextColor.clicked.connect(onBtnTextColor)
+
+    # Text functions weight
+    def onCkTextWeight(checked):
+        """Enable font weight setting."""
+        if checked:
+            p.SetBool("EnableTextWeight", 1)
+            pCube.SetInt("FontWeight", spinTextWeight.value())
+            spinTextWeight.setEnabled(True)
+            spinTextWeight.setFocus()
+        else:
+            p.RemBool("EnableTextWeight")
+            pCube.RemInt("FontWeight")
+            spinTextWeight.setEnabled(False)
+
+        spinTextWeight.blockSignals(True)
+        spinTextWeight.setValue(pCube.GetInt("FontWeight", 87))
+        spinTextWeight.blockSignals(False)
+
+    ckTextWeight.stateChanged.connect(onCkTextWeight)
+
+    def onSpinTextWeight(value):
+        """Set font weight value."""
+        pCube.SetInt("FontWeight", value)
+
+    spinTextWeight.valueChanged.connect(onSpinTextWeight)
+
+    # Text functions stretch
+    def onCkTextStretch(checked):
+        """Enable font stretch setting."""
+        if checked:
+            p.SetBool("EnableTextStretch", 1)
+            pCube.SetInt("FontStretch", spinTextStretch.value())
+            spinTextStretch.setEnabled(True)
+            spinTextStretch.setFocus()
+        else:
+            p.RemBool("EnableTextStretch")
+            pCube.RemInt("FontStretch")
+            spinTextStretch.setEnabled(False)
+
+        spinTextStretch.blockSignals(True)
+        spinTextStretch.setValue(pCube.GetInt("FontStretch", 62))
+        spinTextStretch.blockSignals(False)
+
+    ckTextStretch.stateChanged.connect(onCkTextStretch)
+
+    def onSpinTextStretch(value):
+        """Set font stretch value."""
+        pCube.SetInt("FontStretch", value)
+
+    spinTextStretch.valueChanged.connect(onSpinTextStretch)
+
+    # Font string
+    def onCkFontString(checked):
+        """Enable font string setting."""
+        if checked:
+            p.SetBool("EnableFontString", 1)
+            btnFontString.setEnabled(True)
+            btnFontString.setFocus()
+        else:
+            p.RemBool("EnableFontString")
+            pCube.RemString("FontString")
+            btnFontString.setEnabled(False)
+
+        s = pCube.GetString("FontString", "Font")
+        s = s.split(",")[0]
+        btnFontString.setText(s)
+
+    ckFontString.stateChanged.connect(onCkFontString)
+
+    def onBtnFontString():
+        """Save as font string."""
+        font = QtGui.QFont()
+        s = pCube.GetString("FontString")
+        if s:
+            font.fromString(s)
+        (font, ok) = QtGui.QFontDialog.getFont(font)
+        if ok:
+            pCube.SetString("FontString", font.toString())
+            s = font.toString()
+            s = s.split(",")[0]
+            btnFontString.setText(s)
+
+    btnFontString.clicked.connect(onBtnFontString)
+
+    # Text functions front
+    def onCkTextFront(checked):
+        """Enable front text setting."""
+        if checked:
+            p.SetBool("EnableTextFront", 1)
+            leTextFront.setEnabled(True)
+            leTextFront.setFocus()
+        else:
+            p.RemBool("EnableTextFront")
+            pCube.RemString("TextFront")
+            leTextFront.setEnabled(False)
+
+        leTextFront.setText(pCube.GetString("TextFront", "FRONT"))
+
+    ckTextFront.stateChanged.connect(onCkTextFront)
+
+    def onLeTextFront():
+        """Set the front text."""
+        pCube.SetString("TextFront", leTextFront.text())
+
+    leTextFront.editingFinished.connect(onLeTextFront)
+
+    # Text functions rear
+    def onCkTextRear(checked):
+        """Enable rear text setting."""
+        if checked:
+            p.SetBool("EnableTextRear", 1)
+            leTextRear.setEnabled(True)
+            leTextRear.setFocus()
+        else:
+            p.RemBool("EnableTextRear")
+            pCube.RemString("TextRear")
+            leTextRear.setEnabled(False)
+
+        leTextRear.setText(pCube.GetString("TextRear", "REAR"))
+
+    ckTextRear.stateChanged.connect(onCkTextRear)
+
+    def onLeTextRear():
+        """Set the rear text."""
+        pCube.SetString("TextRear", leTextRear.text())
+
+    leTextRear.editingFinished.connect(onLeTextRear)
+
+    # Text functions top
+    def onCkTextTop(checked):
+        """Enable top text setting."""
+        if checked:
+            p.SetBool("EnableTextTop", 1)
+            leTextTop.setEnabled(True)
+            leTextTop.setFocus()
+        else:
+            p.RemBool("EnableTextTop")
+            pCube.RemString("TextTop")
+            leTextTop.setEnabled(False)
+
+        leTextTop.setText(pCube.GetString("TextTop", "TOP"))
+
+    ckTextTop.stateChanged.connect(onCkTextTop)
+
+    def onLeTextTop():
+        """Set the top text."""
+        pCube.SetString("TextTop", leTextTop.text())
+
+    leTextTop.editingFinished.connect(onLeTextTop)
+
+    # Text functions bottom
+    def onCkTextBottom(checked):
+        """Enable bottom text setting."""
+        if checked:
+            p.SetBool("EnableTextBottom", 1)
+            leTextBottom.setEnabled(True)
+            leTextBottom.setFocus()
+        else:
+            p.RemBool("EnableTextBottom")
+            pCube.RemString("TextBottom")
+            leTextBottom.setEnabled(False)
+
+        leTextBottom.setText(pCube.GetString("TextBottom", "BOTTOM"))
+
+    ckTextBottom.stateChanged.connect(onCkTextBottom)
+
+    def onLeTextBottom():
+        """Set the bottom text."""
+        pCube.SetString("TextBottom", leTextBottom.text())
+
+    leTextBottom.editingFinished.connect(onLeTextBottom)
+
+    # Text functions left
+    def onCkTextLeft(checked):
+        """Enable left text setting."""
+        if checked:
+            p.SetBool("EnableTextLeft", 1)
+            leTextLeft.setEnabled(True)
+            leTextLeft.setFocus()
+        else:
+            p.RemBool("EnableTextLeft")
+            pCube.RemString("TextLeft")
+            leTextLeft.setEnabled(False)
+
+        leTextLeft.setText(pCube.GetString("TextLeft", "LEFT"))
+
+    ckTextLeft.stateChanged.connect(onCkTextLeft)
+
+    def onLeTextLeft():
+        """Set the left text."""
+        pCube.SetString("TextLeft", leTextLeft.text())
+
+    leTextLeft.editingFinished.connect(onLeTextLeft)
+
+    # Text functions right
+    def onCkTextRight(checked):
+        """Enable right text setting."""
+        if checked:
+            p.SetBool("EnableTextRight", 1)
+            leTextRight.setEnabled(True)
+            leTextRight.setFocus()
+        else:
+            p.RemBool("EnableTextRight")
+            pCube.RemString("TextRight")
+            leTextRight.setEnabled(False)
+
+        leTextRight.setText(pCube.GetString("TextRight", "RIGHT"))
+
+    ckTextRight.stateChanged.connect(onCkTextRight)
+
+    def onLeTextRight():
+        """Set the right text."""
+        pCube.SetString("TextRight", leTextRight.text())
+
+    leTextRight.editingFinished.connect(onLeTextRight)
+
+    # Layout
+    loText.insertLayout(0, loTextColor)
+    loText.insertLayout(1, loTextWeight)
+    loText.insertLayout(2, loTextStretch)
+    loText.insertLayout(3, loFontString)
+    loText.insertLayout(4, loTextFront)
+    loText.insertLayout(5, loTextTop)
+    loText.insertLayout(6, loTextRight)
+    loText.insertLayout(7, loTextRear)
+    loText.insertLayout(8, loTextBottom)
+    loText.insertLayout(9, loTextLeft)
 
     loBtnSettings = QtGui.QHBoxLayout()
     loBtnSettings.addStretch()
     loBtnSettings.addWidget(btnSettingsDone)
 
-    # Layout
-    layout.addWidget(grpBoxMode)
-    layout.addWidget(grpSize)
+    # Layout main
+    layout.addWidget(grpMode)
+    if grpNotify:
+        layout.addWidget(grpNotify)
+    layout.addWidget(grpStyle)
+    layout.addWidget(grpText)
     layout.addStretch()
     layoutMain.insertLayout(1, loBtnSettings)
 
