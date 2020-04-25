@@ -1098,7 +1098,7 @@ def settings(stack, btnSettingsDone):
 
     # Style color hilite
     ckHiliteColor = QtGui.QCheckBox()
-    ckHiliteColor.setText("Hilite color")
+    ckHiliteColor.setText("Highlight color")
     btnHiliteColor = QtGui.QPushButton()
     btnHiliteColor.setEnabled(False)
 
@@ -1661,7 +1661,14 @@ def settings(stack, btnSettingsDone):
         s = pCube.GetString("FontString")
         if s:
             font.fromString(s)
-        (font, ok) = QtGui.QFontDialog.getFont(font)
+        # Reversed on some older Qt5/PySide2 versions
+        (okTemp, fontTemp) = QtGui.QFontDialog.getFont(font)
+        if isinstance(okTemp, (bool)):
+            ok = okTemp
+            font = fontTemp
+        else:
+            ok = fontTemp
+            font = okTemp
         if ok:
             pCube.SetString("FontString", font.toString())
             s = font.toString()
